@@ -3,5 +3,8 @@ src = 'src'
 out = 'out'
 libs = ['lib']
 ffi = true
+remappings = [
+  '@semaphore-protocol/contracts=node_modules/@semaphore-protocol/contracts'
+]
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config

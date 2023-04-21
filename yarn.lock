@@ -226,6 +226,11 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
+"@openzeppelin/contracts@4.7.3":
+  version "4.7.3"
+  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-4.7.3.tgz#939534757a81f8d69cc854c7692805684ff3111e"
+  integrity sha512-dGRS0agJzu8ybo44pCIf3xBaPQN/65AIXNgK8+4gzKd5kbvlqyxryUYVLJv7fK98Seyd2hDZzVEHSWAh0Bt1Yw==
+
 "@pcd/eslint-config-custom@0.4.0":
   version "0.4.0"
   resolved "https://registry.yarnpkg.com/@pcd/eslint-config-custom/-/eslint-config-custom-0.4.0.tgz#7a17766da4d8e5cc0a29642ea57bf550cb722b51"
@@ -312,6 +317,14 @@
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@rushstack/eslint-patch/-/eslint-patch-1.2.0.tgz#8be36a1f66f3265389e90b5f9c9962146758f728"
   integrity sha512-sXo/qW2/pAcmT43VoRKOJbDOfV3cYpq3szSVfIThQXNt+E4DfKj361vaAt3c88U5tPUxzEswam7GW48PJqtKAg==
+
+"@semaphore-protocol/contracts@^3.7.0":
+  version "3.7.0"
+  resolved "https://registry.yarnpkg.com/@semaphore-protocol/contracts/-/contracts-3.7.0.tgz#06c62797a4262099d1ecada41ea67d38835dc048"
+  integrity sha512-ZCagT3SCJUOWPrv/eXjrf7qSBPqMx+EspYIZ4qcMx6vNGXVJnCcnok4LYv0rTMDd5ZUbK+UNqOJ/IGZlIB5g6w==
+  dependencies:
+    "@openzeppelin/contracts" "4.7.3"
+    "@zk-kit/incremental-merkle-tree.sol" "1.3.3"
 
 "@semaphore-protocol/group@^3.1.0":
   version "3.6.0"
@@ -516,6 +529,11 @@
   dependencies:
     "@typescript-eslint/types" "5.58.0"
     eslint-visitor-keys "^3.3.0"
+
+"@zk-kit/incremental-merkle-tree.sol@1.3.3":
+  version "1.3.3"
+  resolved "https://registry.yarnpkg.com/@zk-kit/incremental-merkle-tree.sol/-/incremental-merkle-tree.sol-1.3.3.tgz#ec091912bd6862e978b7b693fcd35b5004d16017"
+  integrity sha512-Tm0MfrKii0JWgYJnyK0U4tlq69SWJemh16Tv3itvW4G2C7BLzgejnBbWomYPPrDHJBDgMDvIKETnb6/w5RLroQ==
 
 "@zk-kit/incremental-merkle-tree@0.4.3":
   version "0.4.3"
