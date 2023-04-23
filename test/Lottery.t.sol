@@ -81,9 +81,24 @@ contract TestLottery is Test {
     assertEq(winners.length, 10);
   }
 
-  // TODO
-  function test_transfer() external {
+  function test_claim() external {
     vm.deal(address(lottery), 100 ether);
+
+    address recipient = lottery.RECIPIENT();
+    uint256 preBalance = recipient.balance;
+
+    lottery.claim();
+
+    assertEq(preBalance + 100 ether, recipient.balance);
+  }
+
+  function test_safeMint_ended() external {
+    test_register();
+
+    vm.warp(lottery.END() + 1);
+    vm.expectRevert(abi.encodeWithSignature("Ended()"));
+    vm.prank(alice);
+    lottery.safeMint{ value: 0.1 ether }(alice);
   }
 
 }
