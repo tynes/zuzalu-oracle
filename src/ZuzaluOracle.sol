@@ -10,10 +10,11 @@ import {Owned} from "solmate/auth/Owned.sol";
 contract ZuzaluOracle is Owned {
 
     enum Groups {
-        Visitors,
+        None,
+        Participants,
         Residents,
-        Organizers,
-        Participants
+        Visitors,
+        Organizers
     }
 
     /// @notice
@@ -66,6 +67,8 @@ contract ZuzaluOracle is Owned {
             _updateOrganizers(root, _depth);
         } else if (_group == Groups.Participants) {
             _updateParticipants(root, _depth);
+        } else {
+            revert("Invalid group");
         }
     }
 
