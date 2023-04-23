@@ -22,7 +22,8 @@ contract TestLottery is Test {
     lottery = new Lottery({
       _oracle: ZuzaluOracle(oracleAddr),
       _end: block.timestamp + 1,
-      _recipient: bob
+      _recipient: bob,
+      _baseURI: "https://zuzalu.com/nft/"
     });
   }
 
@@ -101,4 +102,23 @@ contract TestLottery is Test {
     lottery.safeMint{ value: 0.1 ether }(alice);
   }
 
+  function test_safeMint_invalidAmount() external {
+    test_register();
+    vm.expectRevert(abi.encodeWithSignature("InvalidAmount()"));
+
+    vm.prank(alice);
+    lottery.safeMint(alice);
+  }
+
+  function test_tokenURI() external {
+    assertEq(
+      lottery.tokenURI(0),
+      "https://zuzalu.com/nft/0"
+    );
+
+    assertEq(
+      lottery.tokenURI(4038),
+      "https://zuzalu.com/nft/4038"
+    );
+  }
 }

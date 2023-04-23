@@ -52,20 +52,28 @@ contract Lottery is ERC721 {
     /// @notice The total supply of NFTs.
     uint256 public totalSupply;
 
+    /// @notice The base URI for the NFTs.
+    string public baseURI;
+
     /// @notice After a resident proves that they are part of Zuzalu
     ///         using semaphore, they are added to this mapping.
     mapping(address => bool) public residents;
+
+    /// @notice Internal constant for stringifying uint256 values.
+    bytes16 private constant _SYMBOLS = "0123456789abcdef";
 
     /// @notice Creates the lottery contract and initializes the
     ///         randomness.
     constructor(
       ZuzaluOracle _oracle,
       uint256 _end,
-      address _recipient
+      address _recipient,
+      string memory _baseURI
     ) ERC721("Zuzalu Lottery", "ZLOT") {
       ORACLE = _oracle;
       RECIPIENT = _recipient;
       END = _end;
+      baseURI = _baseURI;
       random = keccak256(abi.encode(block.timestamp, _oracle, _end));
     }
 
@@ -144,6 +152,11 @@ contract Lottery is ERC721 {
     }
 
     /// @notice Soulbound tokens cannot be transferred.
+    function safeTransferFrom(address, address, uint256) public pure override {
+      revert SoulBound();
+    }
+
+    /// @notice Soulbound tokens cannot be transferred.
     function transfer(address, uint256) public pure {
         revert SoulBound();
     }
@@ -156,8 +169,8 @@ contract Lottery is ERC721 {
     }
 
     /// @notice The URI for the NFT metadata.
-    function tokenURI(uint256 _id) public pure override returns (string memory) {
-      return "";
+    function tokenURI(uint256 _id) public view override returns (string memory) {
+      return string(abi.encodePacked(baseURI, toString(_id)));
     }
 
     /// @notice A function useful for backrunning the end of the
@@ -166,5 +179,64 @@ contract Lottery is ERC721 {
     function bias(bytes32 _random) external payable {
       if (msg.value != 0.1 ether) revert InvalidAmount();
       random = keccak256(abi.encode(random, _random));
+    }
+
+    /// @dev Converts a `uint256` to its ASCII `string` decimal representation.
+    function toString(uint256 value) internal pure returns (string memory) {
+        unchecked {
+            uint256 length = log10(value) + 1;
+            string memory buffer = new string(length);
+            uint256 ptr;
+            /// @solidity memory-safe-assembly
+            assembly {
+                ptr := add(buffer, add(32, length))
+            }
+            while (true) {
+                ptr--;
+                /// @solidity memory-safe-assembly
+                assembly {
+                    mstore8(ptr, byte(mod(value, 10), _SYMBOLS))
+                }
+                value /= 10;
+                if (value == 0) break;
+            }
+            return buffer;
+        }
+    }
+
+    /// @dev Return the log in base 10, rounded down, of a positive value.
+    /// Returns 0 if given 0.
+    function log10(uint256 value) internal pure returns (uint256) {
+        uint256 result = 0;
+        unchecked {
+            if (value >= 10 ** 64) {
+                value /= 10 ** 64;
+                result += 64;
+            }
+            if (value >= 10 ** 32) {
+                value /= 10 ** 32;
+                result += 32;
+            }
+            if (value >= 10 ** 16) {
+                value /= 10 ** 16;
+                result += 16;
+            }
+            if (value >= 10 ** 8) {
+                value /= 10 ** 8;
+                result += 8;
+            }
+            if (value >= 10 ** 4) {
+                value /= 10 ** 4;
+                result += 4;
+            }
+            if (value >= 10 ** 2) {
+                value /= 10 ** 2;
+                result += 2;
+            }
+            if (value >= 10 ** 1) {
+                result += 1;
+            }
+        }
+        return result;
     }
 }
