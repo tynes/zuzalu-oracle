@@ -47,7 +47,7 @@ contract TestLottery is Test {
       uint256(0),
       uint256(0)
     ];
-    lottery.register(1, 0, 0, 0, proof);
+    lottery.register(0, 0, 0, proof);
 
     assertTrue(lottery.residents(alice));
   }

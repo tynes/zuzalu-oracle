@@ -225,4 +225,23 @@ contract ZuzaluOracle is Owned {
             return false;
         }
     }
+
+/*//////////////////////////////////////////////////////////////
+                             GETTERS
+//////////////////////////////////////////////////////////////*/
+
+    /// @notice Returns the current root of the group provided in the argument
+    function getLastRoot(Groups _group) external view returns(uint256){
+        if (_group == Groups.Participants) { 
+            return $participantRoots[$participantRoots.length - 1];
+        } else if (_group == Groups.Organizers) {
+            return $organizerRoots[$organizerRoots.length - 1];
+        } else if (_group == Groups.Residents) {
+            return $residentRoots[$residentRoots.length - 1];
+        } else if (_group == Groups.Visitors) {
+            return $visitorRoots[$visitorRoots.length - 1];
+        } else {
+            revert InvalidGroup();
+        }
+    }
 }
