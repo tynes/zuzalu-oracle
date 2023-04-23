@@ -10,6 +10,7 @@ import {Owned} from "solmate/auth/Owned.sol";
 contract ZuzaluOracle is Owned {
 
     enum Groups {
+        // Dummy value so that groups have the official numbering (1-4)
         None,
         Participants,
         Residents,
@@ -20,8 +21,8 @@ contract ZuzaluOracle is Owned {
     /// @notice
     event Update(uint256 root, uint256 depth);
 
-    /// @notice
-    error NotCanonical(uint256);
+    /// @notice The group is not one of the groups in the Groups enum
+    error InvalidGroup();
 
     /// @notice An array of roots for the "visitors" group
     uint256[] $visitorRoots;
@@ -68,7 +69,7 @@ contract ZuzaluOracle is Owned {
         } else if (_group == Groups.Participants) {
             _updateParticipants(root, _depth);
         } else {
-            revert("Invalid group");
+            revert InvalidGroup();
         }
     }
 
@@ -141,7 +142,7 @@ contract ZuzaluOracle is Owned {
     /// @param _signal The signal to verify
     /// @param _externalNullifier The external nullifier
     /// @param _proof The proof to verify
-    /// @param _group The group to verify the proof for (0: Visitors, 1: Residents, 2: Organizers, 3: Participants)
+    /// @param _group The group to verify the proof for { None, Visitors, Residents, Organizers, Participants }
     function verify(
         uint256 _nullifierHash,
         uint256 _signal,
@@ -163,6 +164,8 @@ contract ZuzaluOracle is Owned {
         } else if (_group == Groups.Participants) {
             root = $participantRoots[$visitorRoots.length - 1];
             depth = $participantsToDepth[root];
+        } else {
+            revert InvalidGroup();
         }
         return _verify({
             _root: root,
