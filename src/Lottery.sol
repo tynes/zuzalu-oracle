@@ -85,21 +85,18 @@ contract Lottery is ERC721 {
 
     /// @notice A valid proof will add the user to the allowlist.
     function register(
-        uint256 _root,
         uint256 _nullifierHash,
         uint256 _signal,
         uint256 _externalNullifier,
         uint256[8] calldata _proof
     ) external {
-      if (_root == 0) {
-        _root = ORACLE.commitment().root;
-      }
 
       bool valid = ORACLE.verify({
         _nullifierHash: _nullifierHash,
         _signal: _signal,
         _externalNullifier: _externalNullifier,
-        _proof: _proof
+        _proof: _proof,
+        _group: ZuzaluOracle.Groups.Participants
       });
 
       if (!valid) revert InvalidProof();
