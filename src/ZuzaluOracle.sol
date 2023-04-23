@@ -4,13 +4,10 @@ pragma solidity 0.8.4;
 import {SemaphoreVerifier} from "@semaphore-protocol/contracts/base/SemaphoreVerifier.sol";
 import {Owned} from "solmate/auth/Owned.sol";
 
-/// @title
+/// @title An on-chain oracle for the Zuzalu groups
+/// @author Mark Tyneway <mark.tyneway@gmail.com>
+/// @author Odysseas.eth <odyslam@gmail.com>
 contract ZuzaluOracle is Owned {
-    /// @notice
-    struct Commitment {
-        uint256 root;
-        uint256 depth;
-    }
 
     enum Groups {
         Visitors,
@@ -43,10 +40,9 @@ contract ZuzaluOracle is Owned {
     /// @notice A mapping of roots to their depth for the "participants" groups
     mapping(uint256 => uint256) public $participantsToDepth;
 
-    /// @notice
+    /// @notice The address of the Semaphore verifier contract
     address public immutable VERIFIER;
 
-    /// @notice
     constructor(address _owner, address _verifier) Owned(_owner) {
         VERIFIER = _verifier;
     }
@@ -55,6 +51,12 @@ contract ZuzaluOracle is Owned {
                               UPDATE GROUP
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Updates the root and depth of a group
+    /// @param root The new root
+    /// @param _depth The new depth
+    /// @param _group The group to update
+    /// @dev The group must be one of the groups in the Groups enum which are defined in the following
+    /// order (0: Visitors, 1: Residents, 2: Organizers, 3: Participants)
     function updateGroup(uint256 root, uint256 _depth, Groups _group) public onlyOwner {
         if (_group == Groups.Visitors) {
             _updateVisitors(root, _depth);
@@ -67,31 +69,60 @@ contract ZuzaluOracle is Owned {
         }
     }
 
+    /// @notice Updates the roots and depths of all the groups
+    /// @param _roots An array of roots for each group
+    /// @param _depths An array of depths for each group
+    /// @dev The order of the roots and depths must match the order of the groups. If you don't want to update
+    /// a group, pass in 0 for the root.
     function updateGroups(uint256[4] calldata _roots, uint256[4] calldata _depths) public onlyOwner {
-        _updateVisitors(_roots[0], _depths[0]);
-        _updateResidents(_roots[1], _depths[1]);
-        _updateOrganizers(_roots[2], _depths[2]);
-        _updateParticipants(_roots[3], _depths[3]);
+        if(_roots[0] != 0){ 
+            _updateVisitors(_roots[0], _depths[0]);
+        }
+        if (_roots[1] != 0) {
+            _updateResidents(_roots[1], _depths[1]);
+        }
+        if (_roots[2] !=0){ 
+            _updateOrganizers(_roots[2], _depths[2]);
+        }
+        if (_roots[3] != 0) {
+            _updateParticipants(_roots[3], _depths[3]);
+        }
     }
 
+    /// @notice The internal function that updates the root and depth of the "visitors" group
+    /// @param _root The new root
+    /// @param _depth The new depth
+    /// @dev The depth is stored in a mapping, so that we can easily get the depth of the current and all previous roots
     function _updateVisitors(uint256 _root, uint256 _depth) internal {
         $visitorRoots.push(_root);
         $visitorsToDepth[_root] = _depth;
         emit Update(_root, _depth);
     }
 
+    /// @notice The internal function that updates the root and depth of the "residents" group
+    /// @param _root The new root
+    /// @param _depth The new depth
+    /// @dev The depth is stored in a mapping, so that we can easily get the depth of the current and all previous roots
     function _updateResidents(uint256 _root, uint256 _depth) internal {
         $residentRoots.push(_root);
         $residentsToDepth[_root] = _depth;
         emit Update(_root, _depth);
     }
 
+    /// @notice The internal function that updates the root and depth of the "organizers" group
+    /// @param _root The new root
+    /// @param _depth The new depth
+    /// @dev The depth is stored in a mapping, so that we can easily get the depth of the current and all previous roots
     function _updateOrganizers(uint256 _root, uint256 _depth) internal {
         $organizerRoots.push(_root);
         $organizersToDepth[_root] = _depth;
         emit Update(_root, _depth);
     }
 
+    /// @notice The internal function that updates the root and depth of the "participants" group
+    /// @param _root The new root
+    /// @param _depth The new depth
+    /// @dev The depth is stored in a mapping, so that we can easily get the depth of the current and all previous roots
     function _updateParticipants(uint256 _root, uint256 _depth) internal {
         $participantRoots.push(_root);
         $participantsToDepth[_root] = _depth;
@@ -102,7 +133,12 @@ contract ZuzaluOracle is Owned {
                                  VERIFY
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice
+    /// @notice Verifies a Semaphore proof for a particular signal and group. It returns true if the proof is valid, and false otherwise.
+    /// @param _nullifierHash The hash of the nullifier
+    /// @param _signal The signal to verify
+    /// @param _externalNullifier The external nullifier
+    /// @param _proof The proof to verify
+    /// @param _group The group to verify the proof for (0: Visitors, 1: Residents, 2: Organizers, 3: Participants)
     function verify(
         uint256 _nullifierHash,
         uint256 _signal,
@@ -135,7 +171,14 @@ contract ZuzaluOracle is Owned {
         });
     }
 
-    /// @notice
+    /// @notice Verifies a Semaphore proof for a particular signal and group. The group is specified by the root and depth 
+    /// which is not one of the groups defined in the contract. It returns true if the proof is valid, and false otherwise.
+    /// @param _root The root of the merkle tree
+    /// @param _depth The depth of the merkle tree
+    /// @param _nullifierHash The hash of the nullifier
+    /// @param _signal The signal to verify
+    /// @param _externalNullifier The external nullifier
+    /// @param _proof The proof to verify
     function verifyUnsafe(
         uint256 _root,
         uint256 _depth,
@@ -154,7 +197,7 @@ contract ZuzaluOracle is Owned {
         });
     }
 
-    /// @notice
+    /// @notice The internal function that verifies a Semaphore proof. It calls the deployed Semaphore contract that makes the actual verification.
     function _verify(
         uint256 _root,
         uint256 _depth,
