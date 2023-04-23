@@ -244,4 +244,14 @@ contract ZuzaluOracle is Owned {
             revert InvalidGroup();
         }
     }
+
+    /// @notice Returns the current root of all the groups
+    function getLastRoots() external view returns(uint256[4] memory) {
+        uint256[4] memory roots;
+        roots[0] = $participantRoots[$participantRoots.length - 1];
+        roots[1] = $residentRoots[$residentRoots.length - 1];
+        roots[2] = $visitorRoots[$visitorRoots.length - 1];
+        roots[3] = $organizerRoots[$organizerRoots.length - 1];
+        return roots;
+    }
 }
