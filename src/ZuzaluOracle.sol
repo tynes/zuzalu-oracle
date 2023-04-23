@@ -71,7 +71,7 @@ contract ZuzaluOracle is Owned {
     }
 
     /// @notice
-    function verify(
+    function verifyUnsafe(
         uint256 _root,
         uint256 _nullifierHash,
         uint256 _signal,
