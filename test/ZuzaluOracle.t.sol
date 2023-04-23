@@ -5,7 +5,7 @@ import { Test } from "forge-std/Test.sol";
 import { console2 as console } from "forge-std/console2.sol";
 
 import { ZuzaluOracle } from "../src/ZuzaluOracle.sol";
-import { Backend } from "../src/Backend.sol";
+import { Backend } from "./utils/Backend.sol";
 
 /// TODO: use ffi to call out to getProof.ts to create a proof
 contract ProofGeneration {
