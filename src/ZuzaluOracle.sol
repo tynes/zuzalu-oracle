@@ -4,12 +4,13 @@ pragma solidity 0.8.4;
 import {SemaphoreVerifier} from "@semaphore-protocol/contracts/base/SemaphoreVerifier.sol";
 import {Owned} from "solmate/auth/Owned.sol";
 
-/// @title An on-chain oracle for the Zuzalu groups
+/// @title A wrapper contract around the Semaphore Verifier that is used by Zuzalu to verify it's members
 /// @author Mark Tyneway <mark.tyneway@gmail.com>
 /// @author Odysseas.eth <odyslam@gmail.com>
 contract ZuzaluOracle is Owned {
-
-    enum Groups {
+    /// The official groups by Zuzalu as defined and used in the backend
+    enum Groups
+    {
         // Dummy value so that groups have the official numbering (1-4)
         None,
         Participants,
@@ -18,8 +19,10 @@ contract ZuzaluOracle is Owned {
         Organizers
     }
 
-    /// @notice
-    event Update(uint256 root, uint256 depth);
+    /// @notice The groups have been updated with new latest roots and depths
+    event UpdateGroups(uint256[4] roots, uint256[4] depths);
+    /// @notice A new succesful verification has been made for a particular Zuzalu group and signal
+    event Verify(uint256 indexed signal, Groups indexed _group);
 
     /// @notice The group is not one of the groups in the Groups enum
     error InvalidGroup();
@@ -49,95 +52,47 @@ contract ZuzaluOracle is Owned {
         VERIFIER = _verifier;
     }
 
-    /*//////////////////////////////////////////////////////////////
-                              UPDATE GROUP
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Updates the root and depth of a group
-    /// @param root The new root
-    /// @param _depth The new depth
-    /// @param _group The group to update
-    /// @dev The group must be one of the groups in the Groups enum which are defined in the following
-    /// order (0: Visitors, 1: Residents, 2: Organizers, 3: Participants)
-    function updateGroup(uint256 root, uint256 _depth, Groups _group) public onlyOwner {
-        if (_group == Groups.Visitors) {
-            _updateVisitors(root, _depth);
-        } else if (_group == Groups.Residents) {
-            _updateResidents(root, _depth);
-        } else if (_group == Groups.Organizers) {
-            _updateOrganizers(root, _depth);
-        } else if (_group == Groups.Participants) {
-            _updateParticipants(root, _depth);
-        } else {
-            revert InvalidGroup();
-        }
-    }
-
     /// @notice Updates the roots and depths of all the groups
     /// @param _roots An array of roots for each group
     /// @param _depths An array of depths for each group
     /// @dev The order of the roots and depths must match the order of the groups. If you don't want to update
     /// a group, pass in 0 for the root.
     function updateGroups(uint256[4] calldata _roots, uint256[4] calldata _depths) public onlyOwner {
-        if(_roots[0] != 0){ 
-            _updateVisitors(_roots[0], _depths[0]);
+        if (_roots[0] != 0) {
+            _update($visitorRoots, $visitorsToDepth, _roots[0], _depths[0]);
         }
         if (_roots[1] != 0) {
-            _updateResidents(_roots[1], _depths[1]);
+            _update($residentRoots, $residentsToDepth, _roots[1], _depths[1]);
         }
-        if (_roots[2] !=0){ 
-            _updateOrganizers(_roots[2], _depths[2]);
+        if (_roots[2] != 0) {
+            _update($organizerRoots, $organizersToDepth, _roots[2], _depths[2]);
         }
         if (_roots[3] != 0) {
-            _updateParticipants(_roots[3], _depths[3]);
+            _update($participantRoots, $participantsToDepth, _roots[3], _depths[3]);
         }
+        emit UpdateGroups(_roots, _depths);
     }
 
-    /// @notice The internal function that updates the root and depth of the "visitors" group
-    /// @param _root The new root
-    /// @param _depth The new depth
-    /// @dev The depth is stored in a mapping, so that we can easily get the depth of the current and all previous roots
-    function _updateVisitors(uint256 _root, uint256 _depth) internal {
-        $visitorRoots.push(_root);
-        $visitorsToDepth[_root] = _depth;
-        emit Update(_root, _depth);
-    }
-
-    /// @notice The internal function that updates the root and depth of the "residents" group
-    /// @param _root The new root
-    /// @param _depth The new depth
-    /// @dev The depth is stored in a mapping, so that we can easily get the depth of the current and all previous roots
-    function _updateResidents(uint256 _root, uint256 _depth) internal {
-        $residentRoots.push(_root);
-        $residentsToDepth[_root] = _depth;
-        emit Update(_root, _depth);
-    }
-
-    /// @notice The internal function that updates the root and depth of the "organizers" group
-    /// @param _root The new root
-    /// @param _depth The new depth
-    /// @dev The depth is stored in a mapping, so that we can easily get the depth of the current and all previous roots
-    function _updateOrganizers(uint256 _root, uint256 _depth) internal {
-        $organizerRoots.push(_root);
-        $organizersToDepth[_root] = _depth;
-        emit Update(_root, _depth);
-    }
-
-    /// @notice The internal function that updates the root and depth of the "participants" group
-    /// @param _root The new root
-    /// @param _depth The new depth
-    /// @dev The depth is stored in a mapping, so that we can easily get the depth of the current and all previous roots
-    function _updateParticipants(uint256 _root, uint256 _depth) internal {
-        $participantRoots.push(_root);
-        $participantsToDepth[_root] = _depth;
-        emit Update(_root, _depth);
+    /// @notice Updates the roots and depths of a particular group
+    function _update(
+        uint256[] storage _roots,
+        mapping(uint256 => uint256) storage _toDepth,
+        uint256 _root,
+        uint256 _depth
+    ) internal {
+        _roots.push(_root);
+        _toDepth[_root] = _depth;
     }
 
     /*//////////////////////////////////////////////////////////////
                                  VERIFY
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Verifies a Semaphore proof for a particular signal and group. It returns true if the proof is valid, and false otherwise.
+    /// @notice Verifies a Semaphore proof for a particular signal and group. It returns true if the proof is valid, and false otherwise. It will check against
+    /// historic roots in case the latest root doesn't work. As the latest root may be updated between proof generation and verification, we want to offer a better
+    /// UX to the users by enabling by default to fall to check up to a limit of previous roots.
+    /// @notice It will check up to 2 roots in the past (latest + 2 roots).
+    /// @dev The backend updates the root every few hours, so at worse case the user will generate the proof and right away the backend will update the latest root. By checking the historic roots as well, we allow the user to still use the proof for a small extra cost in gas.
     /// @param _nullifierHash The hash of the nullifier
     /// @param _signal The signal to verify
     /// @param _externalNullifier The external nullifier
@@ -149,21 +104,47 @@ contract ZuzaluOracle is Owned {
         uint256 _externalNullifier,
         uint256[8] calldata _proof,
         Groups _group
-    ) external view returns (bool) {
+    ) external returns (bool) {
+        uint256 historicIndex = 1;
+        while (!_verifyHistoric(_nullifierHash, _signal, _externalNullifier, _proof, _group, historicIndex++)) {
+            if (historicIndex > 3) {
+                return false;
+            }
+        }
+        emit Verify(_signal, _group);
+        return true;
+    }
+
+    function _verifyHistoric(
+        uint256 _nullifierHash,
+        uint256 _signal,
+        uint256 _externalNullifier,
+        uint256[8] calldata _proof,
+        Groups _group,
+        uint256 historicIndex
+    ) internal view returns (bool) {
         uint256 root;
         uint256 depth;
         if (_group == Groups.Visitors) {
-            root = $visitorRoots[$visitorRoots.length - 1];
-            depth = $visitorsToDepth[root];
+            if ($visitorRoots.length > historicIndex) {
+                return false;
+            }
+            (root, depth) = _getRootAndDepth($visitorRoots, historicIndex, $visitorsToDepth);
         } else if (_group == Groups.Residents) {
-            root = $residentRoots[$visitorRoots.length - 1];
-            depth = $residentsToDepth[root];
+            if ($residentRoots.length > historicIndex) {
+                return false;
+            }
+            (root, depth) = _getRootAndDepth($residentRoots, historicIndex, $residentsToDepth);
         } else if (_group == Groups.Organizers) {
-            root = $organizerRoots[$visitorRoots.length - 1];
-            depth = $organizersToDepth[root];
+            if ($organizerRoots.length > historicIndex) {
+                return false;
+            }
+            (root, depth) = _getRootAndDepth($organizerRoots, historicIndex, $organizersToDepth);
         } else if (_group == Groups.Participants) {
-            root = $participantRoots[$visitorRoots.length - 1];
-            depth = $participantsToDepth[root];
+            if ($participantRoots.length > historicIndex) {
+                return false;
+            }
+            (root, depth) = _getRootAndDepth($participantRoots, historicIndex, $participantsToDepth);
         } else {
             revert InvalidGroup();
         }
@@ -177,7 +158,21 @@ contract ZuzaluOracle is Owned {
         });
     }
 
-    /// @notice Verifies a Semaphore proof for a particular signal and group. The group is specified by the root and depth 
+    ///@notice Get the root and and the depth from the data structures that are passed as inputs
+    /// @dev The function accepts a storage pointer, not the actual data
+    /// @param roots The roots array
+    /// @param index The index of the root to get
+    /// @param depths The depths mapping
+    function _getRootAndDepth(uint256[] storage roots, uint256 index, mapping(uint256 => uint256) storage depths)
+        internal
+        view
+        returns (uint256, uint256)
+    {
+        uint256 root = roots[roots.length - index];
+        uint256 depth = depths[root];
+        return (root, depth);
+    }
+    /// @notice Verifies a Semaphore proof for a particular signal and group. The group is specified by the root and depth
     /// which is not one of the groups defined in the contract. It returns true if the proof is valid, and false otherwise.
     /// @param _root The root of the merkle tree
     /// @param _depth The depth of the merkle tree
@@ -203,7 +198,7 @@ contract ZuzaluOracle is Owned {
         });
     }
 
-    /// @notice The internal function that verifies a Semaphore proof. It calls the deployed Semaphore contract that makes the actual verification.
+    /// @notice Thin wrapper arround the SemaphoreVerifier contract's verifyProof function
     function _verify(
         uint256 _root,
         uint256 _depth,
@@ -226,13 +221,14 @@ contract ZuzaluOracle is Owned {
         }
     }
 
-/*//////////////////////////////////////////////////////////////
+
+    /*//////////////////////////////////////////////////////////////
                              GETTERS
-//////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Returns the current root of the group provided in the argument
-    function getLastRoot(Groups _group) external view returns(uint256){
-        if (_group == Groups.Participants) { 
+    function getLastRoot(Groups _group) external view returns (uint256) {
+        if (_group == Groups.Participants) {
             return $participantRoots[$participantRoots.length - 1];
         } else if (_group == Groups.Organizers) {
             return $organizerRoots[$organizerRoots.length - 1];
@@ -243,5 +239,16 @@ contract ZuzaluOracle is Owned {
         } else {
             revert InvalidGroup();
         }
+    }
+
+    /// @notice Returns the latest root of all the groups in an array
+    /// @dev Roots Array: [participants, residents, visitors, organizers]
+    function getLastRoots() external view returns (uint256[4] memory) {
+        uint256[4] memory roots;
+        roots[0] = $participantRoots[$participantRoots.length - 1];
+        roots[1] = $residentRoots[$residentRoots.length - 1];
+        roots[2] = $visitorRoots[$visitorRoots.length - 1];
+        roots[3] = $organizerRoots[$organizerRoots.length - 1];
+        return roots;
     }
 }
