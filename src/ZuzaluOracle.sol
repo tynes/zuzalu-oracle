@@ -10,8 +10,8 @@ import {Owned} from "solmate/auth/Owned.sol";
 contract ZuzaluOracle is Owned {
     /// The official groups by Zuzalu as defined and used in the backend
     enum Groups
+    // Dummy value so that groups have the official numbering (1-4)
     {
-        // Dummy value so that groups have the official numbering (1-4)
         None,
         Participants,
         Residents,
@@ -180,6 +180,7 @@ contract ZuzaluOracle is Owned {
     /// @param _signal The signal to verify
     /// @param _externalNullifier The external nullifier
     /// @param _proof The proof to verify
+
     function verifyUnsafe(
         uint256 _root,
         uint256 _depth,
@@ -220,7 +221,6 @@ contract ZuzaluOracle is Owned {
             return false;
         }
     }
-
 
     /*//////////////////////////////////////////////////////////////
                              GETTERS

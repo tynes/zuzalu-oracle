@@ -2,7 +2,6 @@
 pragma solidity 0.8.4;
 
 import {CommonBase} from "forge-std/Base.sol";
-import {ZuzaluOracle} from "../../src/ZuzaluOracle.sol";
 
 contract Backend is CommonBase {
     struct Group {
@@ -15,14 +14,12 @@ contract Backend is CommonBase {
 
     Group internal _group;
 
-    function group(uint256 _groupId) external returns (Group memory) {
-        string memory groupNumber = vm.toString(_groupId);
+    function group() external returns (Group memory) {
         if (_group.members.length == 0) {
-            string[] memory inputs = new string[](4);
+            string[] memory inputs = new string[](3);
             inputs[0] = "npx";
             inputs[1] = "ts-node";
             inputs[2] = "ffi/getGroup.ts";
-            inputs[3] = groupNumber;
             bytes memory res = vm.ffi(inputs);
 
             (uint256 _id, string memory _name, uint256[] memory _members, uint256 _depth, uint256 _root) =
