@@ -27,7 +27,7 @@ contract ZuzaluOracleTest is Test {
         assertEq(roots[3], initArray[3]);
     }
 
-    function testFuzz_success_updateGroups(uint256[4] memory roots, uint256[4] memory depths) public {
+    function testFuzz_success_updateGroupsAndGetLastDepthsAndRoots(uint256[4] memory roots, uint256[4] memory depths) public {
         vm.assume(roots[0] != 0 && roots[1] != 0 && roots[2] != 0 && roots[3] != 0);
         vm.prank(owner);
         oracle.updateGroups(roots, depths);
@@ -47,7 +47,7 @@ contract ZuzaluOracleTest is Test {
 
     event MockVerify(uint256 root);
 
-    function test_success_verifyHistoricRoots(uint256[4] memory roots, uint256[4] memory depths) public {
+    function testFuzz_success_verifyHistoricRoots(uint256[4] memory roots, uint256[4] memory depths) public {
         vm.assume(roots[0] != 0 && roots[1] != 0 && roots[2] != 0 && roots[3] != 0);
         vm.startPrank(owner);
         oracle.updateGroups(roots, depths);
