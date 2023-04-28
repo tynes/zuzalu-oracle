@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.4;
 
-import {SemaphoreVerifier} from "@semaphore-protocol/contracts/base/SemaphoreVerifier.sol";
+import {ISemaphoreVerifier} from "@semaphore-protocol/contracts/interfaces/ISemaphoreVerifier.sol";
 import {Owned} from "solmate/auth/Owned.sol";
 
 /// @title A wrapper contract around the Semaphore Verifier that is used by Zuzalu to verify it's members
@@ -50,6 +50,14 @@ contract ZuzaluOracle is Owned {
 
     constructor(address _owner, address _verifier) Owned(_owner) {
         VERIFIER = _verifier;
+        _initArrays();
+    }
+
+    function _initArrays() internal {
+        $visitorRoots.push(1);
+        $residentRoots.push(1);
+        $organizerRoots.push(1);
+        $participantRoots.push(1);
     }
 
     /// @notice Updates the roots and depths of all the groups
@@ -122,26 +130,26 @@ contract ZuzaluOracle is Owned {
         uint256[8] calldata _proof,
         Groups _group,
         uint256 historicIndex
-    ) internal view returns (bool) {
+    ) internal returns (bool) {
         uint256 root;
         uint256 depth;
         if (_group == Groups.Visitors) {
-            if ($visitorRoots.length > historicIndex) {
+            if ($visitorRoots.length < historicIndex) {
                 return false;
             }
             (root, depth) = _getRootAndDepth($visitorRoots, historicIndex, $visitorsToDepth);
         } else if (_group == Groups.Residents) {
-            if ($residentRoots.length > historicIndex) {
+            if ($residentRoots.length < historicIndex) {
                 return false;
             }
             (root, depth) = _getRootAndDepth($residentRoots, historicIndex, $residentsToDepth);
         } else if (_group == Groups.Organizers) {
-            if ($organizerRoots.length > historicIndex) {
+            if ($organizerRoots.length < historicIndex) {
                 return false;
             }
             (root, depth) = _getRootAndDepth($organizerRoots, historicIndex, $organizersToDepth);
         } else if (_group == Groups.Participants) {
-            if ($participantRoots.length > historicIndex) {
+            if ($participantRoots.length < historicIndex) {
                 return false;
             }
             (root, depth) = _getRootAndDepth($participantRoots, historicIndex, $participantsToDepth);
@@ -188,7 +196,7 @@ contract ZuzaluOracle is Owned {
         uint256 _signal,
         uint256 _externalNullifier,
         uint256[8] calldata _proof
-    ) external view returns (bool) {
+    ) external returns (bool) {
         return _verify({
             _root: _root,
             _depth: _depth,
@@ -207,19 +215,19 @@ contract ZuzaluOracle is Owned {
         uint256 _signal,
         uint256 _externalNullifier,
         uint256[8] calldata _proof
-    ) internal view returns (bool) {
-        try SemaphoreVerifier(VERIFIER).verifyProof({
-            merkleTreeRoot: _root,
-            nullifierHash: _nullifierHash,
-            signal: _signal,
-            externalNullifier: _externalNullifier,
-            proof: _proof,
-            merkleTreeDepth: _depth
-        }) {
-            return true;
-        } catch {
-            return false;
-        }
+    ) internal returns (bool) {
+        (bool success,) = VERIFIER.call(
+            abi.encodeWithSelector(
+                ISemaphoreVerifier.verifyProof.selector,
+                _root,
+                _nullifierHash,
+                _signal,
+                _externalNullifier,
+                _proof,
+                _depth
+            )
+        );
+        return success;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -227,6 +235,8 @@ contract ZuzaluOracle is Owned {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Returns the current root of the group provided in the argument
+    /// @param _group The group to get the root for { None, Visitors, Residents, Organizers, Participants }
+    /// @return root The current root of the group
     function getLastRoot(Groups _group) external view returns (uint256) {
         if (_group == Groups.Participants) {
             return $participantRoots[$participantRoots.length - 1];
@@ -242,13 +252,22 @@ contract ZuzaluOracle is Owned {
     }
 
     /// @notice Returns the latest root of all the groups in an array
-    /// @dev Roots Array: [participants, residents, visitors, organizers]
+    /// @return roots The latest roots of all the groups [participants, residents, visitors, organizers]
     function getLastRoots() external view returns (uint256[4] memory) {
         uint256[4] memory roots;
-        roots[0] = $participantRoots[$participantRoots.length - 1];
+        roots[0] = $visitorRoots[$visitorRoots.length - 1];
         roots[1] = $residentRoots[$residentRoots.length - 1];
-        roots[2] = $visitorRoots[$visitorRoots.length - 1];
-        roots[3] = $organizerRoots[$organizerRoots.length - 1];
+        roots[2] = $organizerRoots[$organizerRoots.length - 1];
+        roots[3] = $participantRoots[$participantRoots.length - 1];
         return roots;
+    }
+
+    function getLastDepths() external view returns (uint256[4] memory) {
+        uint256[4] memory depths;
+        depths[0] = $visitorsToDepth[$visitorRoots[$visitorRoots.length - 1]];
+        depths[1] = $residentsToDepth[$residentRoots[$residentRoots.length - 1]];
+        depths[2] = $organizersToDepth[$organizerRoots[$organizerRoots.length - 1]];
+        depths[3] = $participantsToDepth[$participantRoots[$participantRoots.length - 1]];
+        return depths;
     }
 }
