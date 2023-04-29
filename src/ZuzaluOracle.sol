@@ -128,36 +128,64 @@ contract ZuzaluOracle is Owned {
         return true;
     }
 
+    /// @notice Verifies a Semaphore proof for a particular signal and group. It returns true if the proof is valid, and false otherwise. 
+    /// @dev It will not check the latest root, but a root in the past, as specified by the _historicRootIndex.
+    /// @param _nullifierHash The hash of the nullifier
+    /// @param _signal The signal to verify
+    /// @param _externalNullifier The external nullifier
+    /// @param _proof The proof to verify
+    /// @param _historicRootIndex The index of the array that contains the roots for the specific group.
+    /// @param _group The group to verify the proof for { None, Visitors, Residents, Organizers, Participants }
+    function verify(
+        uint256 _nullifierHash,
+        uint256 _signal,
+        uint256 _externalNullifier,
+        uint256[8] calldata _proof,
+        uint256 _historicRootIndex,
+        Groups _group
+    ) external returns (bool) {
+        return _verifyHistoric(_nullifierHash, _signal, _externalNullifier, _proof, _group, _historicRootIndex);
+    }
+
+
+    /// @notice Verifies a Semaphore proof for a particular signal and group. It returns true if the proof is valid, and false otherwise. It will also return
+    /// false if the index is out of bounds of the array for the specific group.
+    /// @param _nullifierHash The hash of the nullifier
+    /// @param _signal The signal to verify
+    /// @param _externalNullifier The external nullifier
+    /// @param _proof The proof to verify
+    /// @param _historicIndex The index of the array that contains the roots for the specific group.
+    /// @param _group The group to verify the proof for { None, Visitors, Residents, Organizers, Participants }
     function _verifyHistoric(
         uint256 _nullifierHash,
         uint256 _signal,
         uint256 _externalNullifier,
         uint256[8] calldata _proof,
         Groups _group,
-        uint256 historicIndex
+        uint256 _historicIndex
     ) internal returns (bool) {
         uint256 root;
         uint256 depth;
         if (_group == Groups.Visitors) {
-            if ($visitorRoots.length < historicIndex) {
+            if ($visitorRoots.length < _historicIndex) {
                 return false;
             }
-            (root, depth) = _getRootAndDepth($visitorRoots, historicIndex, $visitorsToDepth);
+            (root, depth) = _getRootAndDepth($visitorRoots, _historicIndex, $visitorsToDepth);
         } else if (_group == Groups.Residents) {
-            if ($residentRoots.length < historicIndex) {
+            if ($residentRoots.length < _historicIndex) {
                 return false;
             }
-            (root, depth) = _getRootAndDepth($residentRoots, historicIndex, $residentsToDepth);
+            (root, depth) = _getRootAndDepth($residentRoots, _historicIndex, $residentsToDepth);
         } else if (_group == Groups.Organizers) {
-            if ($organizerRoots.length < historicIndex) {
+            if ($organizerRoots.length < _historicIndex) {
                 return false;
             }
-            (root, depth) = _getRootAndDepth($organizerRoots, historicIndex, $organizersToDepth);
+            (root, depth) = _getRootAndDepth($organizerRoots, _historicIndex, $organizersToDepth);
         } else if (_group == Groups.Participants) {
-            if ($participantRoots.length < historicIndex) {
+            if ($participantRoots.length < _historicIndex) {
                 return false;
             }
-            (root, depth) = _getRootAndDepth($participantRoots, historicIndex, $participantsToDepth);
+            (root, depth) = _getRootAndDepth($participantRoots, _historicIndex, $participantsToDepth);
         } else {
             revert InvalidGroup();
         }
