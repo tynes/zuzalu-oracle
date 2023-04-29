@@ -5,8 +5,9 @@ libs = ['lib']
 ffi = true
 remappings = [
   '@semaphore-protocol/contracts=node_modules/@semaphore-protocol/contracts',
-  'solmate=lib/solmate/src',
-  'forge-std=lib/forge-std/src'
+  'solmate=node_modules/solmate/src',
+  'forge-std=node_modules/forge-std/src',
+  'ds-test=node_modules/ds-test/src',
 ]
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
