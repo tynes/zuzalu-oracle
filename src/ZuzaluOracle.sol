@@ -8,6 +8,9 @@ import {Owned} from "solmate/auth/Owned.sol";
 /// @author Mark Tyneway <mark.tyneway@gmail.com>
 /// @author Odysseas.eth <odyslam@gmail.com>
 contract ZuzaluOracle is Owned {
+
+    string constant internal VERSION = "0.0.1";
+
     /// The official groups by Zuzalu as defined and used in the backend
     enum Groups
     // Dummy value so that groups have the official numbering (1-4)
@@ -22,7 +25,7 @@ contract ZuzaluOracle is Owned {
     /// @notice The groups have been updated with new latest roots and depths
     event UpdateGroups(uint256[4] roots, uint256[4] depths);
     /// @notice A new succesful verification has been made for a particular Zuzalu group and signal
-    event Verify(uint256 indexed signal, Groups indexed _group);
+    event Verify(uint256 indexed signal, uint256 indexed root, Groups indexed _group);
 
     /// @notice The group is not one of the groups in the Groups enum
     error InvalidGroup();
@@ -53,6 +56,8 @@ contract ZuzaluOracle is Owned {
         _initArrays();
     }
 
+    /// @notice Initialize the arrays so that the getLastRoots() function does not revert and the backend
+    /// does not have to implement a special case for the first time the contract is deployed
     function _initArrays() internal {
         $visitorRoots.push(1);
         $residentRoots.push(1);
@@ -114,12 +119,12 @@ contract ZuzaluOracle is Owned {
         Groups _group
     ) external returns (bool) {
         uint256 historicIndex = 1;
+        // Note: We have a side-effect in the arg for some small gas saving
         while (!_verifyHistoric(_nullifierHash, _signal, _externalNullifier, _proof, _group, historicIndex++)) {
             if (historicIndex > 3) {
                 return false;
             }
         }
-        emit Verify(_signal, _group);
         return true;
     }
 
@@ -156,6 +161,7 @@ contract ZuzaluOracle is Owned {
         } else {
             revert InvalidGroup();
         }
+        emit Verify(_signal, root, _group);
         return _verify({
             _root: root,
             _depth: depth,
@@ -188,7 +194,6 @@ contract ZuzaluOracle is Owned {
     /// @param _signal The signal to verify
     /// @param _externalNullifier The external nullifier
     /// @param _proof The proof to verify
-
     function verifyUnsafe(
         uint256 _root,
         uint256 _depth,
@@ -233,6 +238,10 @@ contract ZuzaluOracle is Owned {
     /*//////////////////////////////////////////////////////////////
                              GETTERS
     //////////////////////////////////////////////////////////////*/
+    
+    function version() public pure returns (string memory) {
+        return VERSION;
+    }
 
     /// @notice Returns the current root of the group provided in the argument
     /// @param _group The group to get the root for { None, Visitors, Residents, Organizers, Participants }
