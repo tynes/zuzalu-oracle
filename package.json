@@ -2,15 +2,25 @@
   "name": "zuzalu-oracle",
   "version": "0.0.0",
   "main": "index.js",
-  "author": "Mark Tyneway <mark.tyneway@gmail.com>",
   "license": "MIT",
+  "contributors": [
+    {
+      "name" : "Mark Tyneway",
+      "email" : "mark.tyneway@gmail.com"
+    },
+    {
+      "name" : "Odysseas.eth",
+      "email" : "odyslam@gmail.com"
+    }
+  ],
   "dependencies": {
-    "@pcd/semaphore-group-pcd": "^0.4.0",
     "@semaphore-protocol/contracts": "^3.7.0",
     "@types/node": "^18.15.11",
     "@types/node-fetch": "^2.6.3",
     "ethers": "^6.3.0",
-    "node-fetch": "2",
-    "ts-node": "^10.9.1"
+    "ts-node": "^10.9.1",
+    "forge-std": "https://github.com/foundry-rs/forge-std#b971f66b8416e3b09f240f6ee7230ad3bdb13c19",
+    "ds-test": "https://github.com/dapphub/ds-test#cd98eff28324bfac652e63a239a60632a761790b",
+    "solmate": "^6.7.0"
   }
 }
