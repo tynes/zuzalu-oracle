@@ -32,3 +32,8 @@ jobs:
         run: |
           forge test -vvv
         id: test
+
+      - name: Update docs
+        run: | 
+          forge doc
+        id: docs
