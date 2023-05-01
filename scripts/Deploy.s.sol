@@ -11,36 +11,39 @@ address constant DEPLOYED_VERIFIER = 0x3889927F0B5Eb1a02C6E2C20b39a1Bd4EAd76131;
 
 contract Deploy is Script {
     address $verifier;
-    address $owner;
+    address $deployer;
 
-    constructor() {
-        uint256 $privateKey = vm.envUint("PRIVATE_KEY");
-        require($privateKey != 0, "PRIVATE_KEY is required");
-        $owner = vm.addr($privateKey);
-    }
 
     function run() public {
+        _loadDeployerFromPrivateKey();
         _getVerifierOrDeploy();
         _deployOracle();
     }
 
     function run(address _verifier) public {
         $verifier = _verifier;
+        _loadDeployerFromPrivateKey();
         _deployOracle();
     }
 
     function printAddress(uint256 _chainId) public {
         vm.chainId(_chainId);
         _getVerifierOrDeploy();
-        bytes memory args = abi.encode($owner, $verifier);
+        bytes memory args = abi.encode($deployer, $verifier);
         bytes32 initCodeHash = hashInitCode(type(ZuzaluOracle).creationCode, args);
         address oracle = computeCreate2Address(SALT, initCodeHash);
         console.log("Create2 Args");
-        console.log("> Owner:  ", $owner);
+        console.log("> Owner:  ", $deployer);
         console.log("> Verifier", $verifier);
         console.log("> Salt", vm.toString(SALT));
         console.log("Address");
         console.log("> Oracle: ", oracle);
+    }
+    
+    function _loadDeployerFromPrivateKey() internal {
+        uint256 $privateKey = vm.envUint("PRIVATE_KEY");
+        $deployer = vm.rememberKey($privateKey);
+        console.log("Deployer address: ", $deployer);
     }
 
     function _deployVerifier() internal {
@@ -64,9 +67,9 @@ contract Deploy is Script {
     }
 
     function _deployOracle() internal {
-        vm.startBroadcast($owner);
+        vm.startBroadcast($deployer);
         ZuzaluOracle oracle = new ZuzaluOracle{salt: SALT}({
-      _owner: $owner,
+      _owner: $deployer,
       _verifier: $verifier 
     });
         vm.stopBroadcast();
