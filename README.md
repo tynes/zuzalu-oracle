@@ -8,10 +8,9 @@ This is a wrapper contract around the deploy contracts of [Semaphore](https://gi
 
 The Zuzalu API offers the latest root for every group. A trusted backend cron service, named [zuzalu-updater](https://github.com/odyslam/zuzalu-updater), reads that API call and updates the on-chain stored root, so that people can generate proofs and verify them on-chain.
 
-# Deployed Addresses TBD
+# Deployed Addresses 
 
-- [Sepolia]()
-- [Ethereum]()
+- [Sepolia](https://sepolia.etherscan.io/address/0x9E9e9995f83975770C454be031C1E68bF24dC0af)
 
 # Building with Zuzalu Oracle
 
