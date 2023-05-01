@@ -1,6 +1,6 @@
 name: test
 
-on: workflow_dispatch
+on: push
 
 env:
   FOUNDRY_PROFILE: ci
@@ -16,18 +16,16 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
-
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
-
+      - uses: bahmutov/npm-install@v1
       - name: Run Forge build
         run: |
           forge --version
           forge build --sizes
         id: build
-
       - name: Run Forge tests
         run: |
           forge test -vvv
