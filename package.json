@@ -21,7 +21,6 @@
   ],
   "main": "dist/src/index.js",
   "scripts": {
-    "postinstall": "yarn build",
     "build-contracts": "forge build",
     "build": "yarn build-contracts && yarn generate-types && yarn copy-definitions && yarn clean",
     "test": "forge test && yarn types",
