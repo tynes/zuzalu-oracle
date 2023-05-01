@@ -8,8 +8,7 @@ import {Owned} from "solmate/auth/Owned.sol";
 /// @author Mark Tyneway <mark.tyneway@gmail.com>
 /// @author Odysseas.eth <odyslam@gmail.com>
 contract ZuzaluOracle is Owned {
-
-    string constant internal VERSION = "0.0.1";
+    string internal constant VERSION = "0.0.2";
 
     /// The official groups by Zuzalu as defined and used in the backend
     enum Groups
@@ -128,7 +127,7 @@ contract ZuzaluOracle is Owned {
         return true;
     }
 
-    /// @notice Verifies a Semaphore proof for a particular signal and group. It returns true if the proof is valid, and false otherwise. 
+    /// @notice Verifies a Semaphore proof for a particular signal and group. It returns true if the proof is valid, and false otherwise.
     /// @dev It will not check the latest root, but a root in the past, as specified by the _historicRootIndex.
     /// @param _nullifierHash The hash of the nullifier
     /// @param _signal The signal to verify
@@ -146,7 +145,6 @@ contract ZuzaluOracle is Owned {
     ) external returns (bool) {
         return _verifyHistoric(_nullifierHash, _signal, _externalNullifier, _proof, _group, _historicRootIndex);
     }
-
 
     /// @notice Verifies a Semaphore proof for a particular signal and group. It returns true if the proof is valid, and false otherwise. It will also return
     /// false if the index is out of bounds of the array for the specific group.
@@ -222,6 +220,7 @@ contract ZuzaluOracle is Owned {
     /// @param _signal The signal to verify
     /// @param _externalNullifier The external nullifier
     /// @param _proof The proof to verify
+
     function verifyUnsafe(
         uint256 _root,
         uint256 _depth,
@@ -266,7 +265,7 @@ contract ZuzaluOracle is Owned {
     /*//////////////////////////////////////////////////////////////
                              GETTERS
     //////////////////////////////////////////////////////////////*/
-    
+
     function version() public pure returns (string memory) {
         return VERSION;
     }

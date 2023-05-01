@@ -2,7 +2,6 @@
 pragma solidity 0.8.4;
 
 contract MockVerifier {
-
     bool canSucceed = true;
 
     function success(bool _canSucceed) public {

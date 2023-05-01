@@ -27,7 +27,9 @@ contract ZuzaluOracleTest is Test {
         assertEq(roots[3], initArray[3]);
     }
 
-    function testFuzz_success_updateGroupsAndGetLastDepthsAndRoots(uint256[4] memory roots, uint256[4] memory depths) public {
+    function testFuzz_success_updateGroupsAndGetLastDepthsAndRoots(uint256[4] memory roots, uint256[4] memory depths)
+        public
+    {
         vm.assume(roots[0] != 0 && roots[1] != 0 && roots[2] != 0 && roots[3] != 0);
         vm.prank(owner);
         oracle.updateGroups(roots, depths);
@@ -51,11 +53,11 @@ contract ZuzaluOracleTest is Test {
         vm.assume(roots[0] != 0 && roots[1] != 0 && roots[2] != 0 && roots[3] != 0);
         vm.startPrank(owner);
         oracle.updateGroups(roots, depths);
-        roots[1]  = 5;
+        roots[1] = 5;
         oracle.updateGroups(roots, depths);
-        roots[1]  = 10;
+        roots[1] = 10;
         oracle.updateGroups(roots, depths);
-        roots[1]  = 15;
+        roots[1] = 15;
         oracle.updateGroups(roots, depths);
         vm.stopPrank();
         // It will succeed on the first try
@@ -67,7 +69,7 @@ contract ZuzaluOracleTest is Test {
 
         // After 3 attempts, it will return false. It can verify up to 2 roots back + latest.
         verifier.success(false);
-        for(uint i; i<3; i++) {
+        for (uint256 i; i < 3; i++) {
             vm.expectEmit(false, false, false, true);
             // It should first attempt to verify using the latest root (15) and then
             // go back to 10 and 5. These roots are the 3 latest roots of the group Residents.
